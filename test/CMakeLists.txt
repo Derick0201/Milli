@@ -4,7 +4,10 @@ if (NOT ${ENABLE_TESTING})
     return()
 endif ()
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+set(CMAKE_CXX_STANDARD 11)
+
+hunter_add_package(Boost COMPONENTS test)
+find_package(Boost CONFIG REQUIRED unit_test_framework)
 
 enable_testing()
 
