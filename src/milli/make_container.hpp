@@ -56,10 +56,9 @@ namespace milli{
     using initializer_type = typename detail::first_of_variadic<Args...>::type;
     using value_ref = std::reference_wrapper<initializer_type>;
 
-    static_assert(detail::is_same<Args...>::value, "for make_container all types needs to be the same");
+    static_assert(detail::is_same<Args...>::value, "for make_container all argument types needs to be the same");
     static_assert(std::is_move_constructible<value_type>::value, "elements for container created with temporary values must be move constructible");
 
-//    std::initializer_list<value_ref> tmp{std::ref(args)...};
     std::array<value_ref, sizeof...(Args)> tmp = {std::ref(args)...};
     auto moveable = [](decltype(tmp.begin()) it){return std::make_move_iterator(it);};
     return {moveable(tmp.begin()), moveable(tmp.end())};
@@ -67,7 +66,7 @@ namespace milli{
 
   template <typename T, typename... Args>
   auto make_container(Args&&... args) -> typename std::enable_if<std::is_lvalue_reference<typename detail::first_of_variadic<Args...>::type>::value, T>::type{
-    static_assert(detail::is_same<Args...>::value, "for make_container all types needs to be the same");
+    static_assert(detail::is_same<Args...>::value, "for make_container all argument types needs to be the same");
     using value_type = typename T::value_type;
     static_assert(std::is_copy_constructible<value_type>::value, "elements for container created with temporary values must be copy constructible");
 
