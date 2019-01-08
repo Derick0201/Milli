@@ -81,6 +81,7 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
+            - g++-7
       env:
         - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
       compiler: clang
@@ -93,6 +94,7 @@ matrix:
             - llvm-toolchain-trusty-6.0
           packages:
             - clang-6.0
+            - g++-7
       env:
         - MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0"
       compiler: clang
@@ -105,6 +107,7 @@ matrix:
             - llvm-toolchain-trusty-7
           packages:
             - clang-7
+            - g++-7
       env:
         - MATRIX_EVAL="CC=clang-7 && CXX=clang++-7"
       compiler: clang
