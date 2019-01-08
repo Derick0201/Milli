@@ -4,7 +4,8 @@ set(SOURCES
         raii.hpp
         strong_assert.hpp
         optional.hpp
-        make_container.hpp)
+        make_container.hpp
+        repeat.hpp)
 
 set(ABSOLUTE_SOURCES "")
 
