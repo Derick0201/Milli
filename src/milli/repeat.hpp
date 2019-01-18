@@ -20,7 +20,6 @@ repeat.hpp: This file is part of the Milli Library.
 #include <type_traits>
 #include <utility>
 
-//todo add support to types with both operators
 namespace milli {
 
   namespace detail {

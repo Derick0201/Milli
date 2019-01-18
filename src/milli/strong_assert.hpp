@@ -18,7 +18,7 @@ strong_assert.hpp: This file is part of the Milli Library.
 #define MILLI_STRONG_ASSERT_HPP
 
 #include <iostream>
-#include <cassert>
+#include <exception>
 
 namespace milli{
 
