@@ -17,6 +17,16 @@ optional.hpp: This file is part of the Milli Library.
 #ifndef MILLI_OPTIONAL_HPP
 #define MILLI_OPTIONAL_HPP
 
+#ifdef __cpp_lib_optional
+
+#include <optional>
+namespace milli::detail{
+  template <typename T>
+  using optional = std::optional;
+}
+
+#else
+
 #include <utility>
 #include "strong_assert.hpp"
 
@@ -90,4 +100,5 @@ namespace milli {
   }
 }
 
+#endif // __cpp_lib_optional
 #endif //MILLI_OPTIONAL_HPP

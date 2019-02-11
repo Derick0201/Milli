@@ -5,7 +5,8 @@ set(SOURCES
         strong_assert.hpp
         optional.hpp
         make_container.hpp
-        repeat.hpp)
+        repeat.hpp
+        not_empty.hpp)
 
 set(ABSOLUTE_SOURCES "")
 
