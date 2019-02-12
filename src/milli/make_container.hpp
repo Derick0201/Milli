@@ -68,9 +68,10 @@ namespace milli{
   auto make_container(Args&&... args) -> typename std::enable_if<std::is_lvalue_reference<typename detail::first_of_variadic<Args...>::type>::value, T>::type{
     static_assert(detail::is_same<Args...>::value, "for make_container all argument types needs to be the same");
     using value_type = typename T::value_type;
+    using value_ref = std::reference_wrapper<const value_type>;
     static_assert(std::is_copy_constructible<value_type>::value, "elements for container created with temporary values must be copy constructible");
 
-    std::initializer_list<value_type> tmp{args...};
+    std::initializer_list<value_ref> tmp{std::cref(args)...};
     return {tmp.begin(), tmp.end()};
   }
 
