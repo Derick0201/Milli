@@ -23,7 +23,6 @@ move_initializer_list.cpp: This file is part of the Milli Library.
 #include <vector>
 #include <type_traits>
 
-//todo measurements are needed to compare with initializer_list efficiency
 BOOST_AUTO_TEST_SUITE(make_container_test_suite)
 
 BOOST_AUTO_TEST_CASE(no_element_initialization) {
