@@ -14,12 +14,8 @@ not_empty.hpp: This file is part of the Milli Library.
     DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MILLI_LIBRARY_NOT_NULL_HPP
-#define MILLI_LIBRARY_NOT_NULL_HPP
-
-#ifndef MILLI_TEST
-#include <cassert>
-#endif
+#ifndef MILLI_LIBRARY_NOT_EMPTY_BASE_HPP
+#define MILLI_LIBRARY_NOT_EMPTY_BASE_HPP
 
 #include <cstddef>
 #include <type_traits>
@@ -31,36 +27,51 @@ not_empty.hpp: This file is part of the Milli Library.
 
 namespace milli {
 
-  template<typename T>
-  class not_empty {
+  namespace detail {
+    struct no_error_handler {
+      void operator()(bool condition) noexcept {}
+    };
+  }
+
+  template<typename T, typename ErrorHandler = detail::no_error_handler>
+  class not_empty_base {
   public:
     using stored_type  = T;
     using element_type = typename std::remove_cv<typename std::remove_reference<decltype(*std::declval<stored_type>())>::type>::type;
 
   private:
     static constexpr bool is_dereference_noexcept = noexcept(*std::declval<stored_type>());
+    static constexpr bool is_error_check_noexcept = noexcept(std::declval<ErrorHandler>()(false));
+    static constexpr bool is_cpp14_error_check_noexcept =
+#if __cpp_constexpr >= 201304
+        is_error_check_noexcept
+#else
+    true
+#endif
+    ;
 
   public:
-    not_empty() = delete;
+    not_empty_base() = delete;
 
     template<typename U, typename = typename std::enable_if<std::is_convertible<U, stored_type>::value>
     ::type>
 #if __cpp_constexpr >= 201304
-  constexpr
+    constexpr
 #endif
-    not_empty(U&& value) noexcept(std::is_nothrow_constructible<stored_type, decltype((std::forward<U>(value)))>::value)
+    not_empty_base(U&& value) noexcept(std::is_nothrow_constructible<stored_type, decltype((std::forward<U>(
+        value)))>::value && is_error_check_noexcept)
         : value_(std::forward<U>(value)) {
-      assert(static_cast<bool>(value_));
+      ErrorHandler()(static_cast<bool>(value_));
     }
 
-    not_empty(std::nullptr_t) = delete;
-    not_empty(const std::nullptr_t&) = delete;
-    not_empty(const std::nullptr_t&&) = delete;
+    not_empty_base(std::nullptr_t) = delete;
+    not_empty_base(const std::nullptr_t&) = delete;
+    not_empty_base(const std::nullptr_t&&) = delete;
 
 #ifdef __cpp_lib_optional
-    not_empty(std::nullopt_t) = delete;
-    not_empty(const std::nullopt_t&) = delete;
-    not_empty(const std::nullopt_t&&) = delete;
+    not_empty_base(std::nullopt_t) = delete;
+    not_empty_base(const std::nullopt_t&) = delete;
+    not_empty_base(const std::nullopt_t&&) = delete;
 #endif
 
     constexpr operator const stored_type&() const noexcept {
@@ -71,80 +82,74 @@ namespace milli {
       return get();
     }
 
-    auto operator*() noexcept(is_dereference_noexcept) -> element_type& {
+    auto operator*() noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> element_type& {
 #if __cpp_constexpr >= 201304
-      assert(static_cast<bool>(value_));
+      ErrorHandler()(static_cast<bool>(value_));
 #endif
       return *value_;
     }
 
-    constexpr auto operator*() const noexcept(is_dereference_noexcept) -> const element_type& {
+    constexpr auto operator*() const noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> const element_type& {
 #if __cpp_constexpr >= 201304
-      assert(static_cast<bool>(value_));
+      ErrorHandler()(static_cast<bool>(value_));
 #endif
       return *value_;
     }
 
-    auto operator->() noexcept(is_dereference_noexcept) -> element_type* {
+    auto operator->() noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> element_type* {
 #if __cpp_constexpr >= 201304
-      assert(static_cast<bool>(value_));
+      ErrorHandler()(static_cast<bool>(value_));
 #endif
       return &*(*this);
     }
 
-    constexpr auto operator->() const noexcept(is_dereference_noexcept) -> element_type* {
+    constexpr auto operator->() const noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> element_type* {
 #if __cpp_constexpr >= 201304
-      assert(static_cast<bool>(value_));
+      ErrorHandler()(static_cast<bool>(value_));
 #endif
       return &*(*this);
     }
 
-    constexpr auto get() const noexcept -> const stored_type& {
+    constexpr auto get() const noexcept(is_cpp14_error_check_noexcept) -> const stored_type& {
 #if __cpp_constexpr >= 201304
-      assert(static_cast<bool>(value_));
+      ErrorHandler()(static_cast<bool>(value_));
 #endif
       return value_;
     }
 
-    auto get() noexcept -> stored_type& {
+    auto get() noexcept(is_cpp14_error_check_noexcept) -> stored_type& {
 #if __cpp_constexpr >= 201304
-      assert(static_cast<bool>(value_));
+      ErrorHandler()(static_cast<bool>(value_));
 #endif
       return value_;
     }
 
     template<typename U, typename = typename std::enable_if<
         std::is_convertible<U, stored_type>::value>::type>
-    constexpr auto operator=(not_empty<U>&& value)
+#if __cpp_constexpr >= 201304
+    constexpr
+#endif
+    auto operator=(not_empty_base<U>&& value)
     noexcept(noexcept(std::declval<stored_type&>() = std::forward<U>(value)))
-    -> not_empty& {
-      assert(static_cast<bool>(value_));
+    -> not_empty_base& {
+      ErrorHandler()(static_cast<bool>(value_));
       value_ = std::forward<U>(value);
       return *this;
     }
 
-    auto operator=(std::nullptr_t) -> not_empty& = delete;
-    auto operator=(const std::nullptr_t&) -> not_empty& = delete;
-    auto operator=(const std::nullptr_t&&) -> not_empty& = delete;
+    auto operator=(std::nullptr_t) -> not_empty_base& = delete;
+    auto operator=(const std::nullptr_t&) -> not_empty_base& = delete;
+    auto operator=(const std::nullptr_t&&) -> not_empty_base& = delete;
 
 #ifdef __cpp_lib_optional
-    not_empty& operator=(std::nullopt_t) = delete;
-    not_empty& operator=(const std::nullopt_t&) = delete;
-    not_empty& operator=(const std::nullopt_t&&) = delete;
+    not_empty_base& operator=(std::nullopt_t) = delete;
+    not_empty_base& operator=(const std::nullopt_t&) = delete;
+    not_empty_base& operator=(const std::nullopt_t&&) = delete;
 #endif
 
   private:
     stored_type value_;
   };
-
-#ifdef __cpp_deduction_guides
-
-  template<typename T>
-  not_empty(T) -> not_empty<T>;
-
-#endif
-
-
 }
 
-#endif //MILLI_LIBRARY_NOT_NULL_HPP
+#endif //MILLI_LIBRARY_NOT_EMPTY_BASE_HPP
