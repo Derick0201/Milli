@@ -18,6 +18,7 @@ raii.hpp: This file is part of the Milli Library.
 #define MILLI_RAII_HPP
 
 #include <utility>
+#include <type_traits>
 #include <milli/optional.hpp>
 
 namespace milli {
@@ -26,13 +27,13 @@ namespace milli {
   class raii {
   public:
     raii() = default;
-    explicit raii(Functor &&finalizer)
-        : functor_(detail::optional<Functor>(std::forward<Functor>(finalizer))) {}
+    explicit raii(Functor &&finalizer) noexcept(std::is_nothrow_constructible<detail::optional<Functor>, decltype(std::forward<Functor>(finalizer))>::value)
+        : functor_(std::forward<Functor>(finalizer))  {}
 
     raii(raii &&rhs) noexcept(noexcept(Functor(std::move(std::declval<Functor>())))) : functor_(
         std::move(rhs.functor_)) {}
 
-    ~raii() noexcept(noexcept(std::declval<Functor>()())) { if (functor_) functor_.get()(); }
+    ~raii() noexcept(noexcept(std::declval<Functor>()())) { if (functor_) functor_.value()(); }
 
     auto empty() noexcept -> bool {
       return functor_.empty();
@@ -43,15 +44,17 @@ namespace milli {
   };
 
   template<typename Functor>
-  [[deprecated]] auto make_raii(Functor finalizer) -> raii<Functor> {
+#if __cpp_deduction_guides
+  [[deprecated]]
+#endif
+  auto make_raii(Functor finalizer) -> raii<Functor> {
     using MyRAII = raii<Functor>;
     return MyRAII(std::move(finalizer));
   }
 
-//todo test
 #ifdef __cpp_deduction_guides
 template <typename Functor>
-raii(Functor&&) -> raii<Functor>
+raii(Functor&&) -> raii<Functor>;
 #endif
 
 }
