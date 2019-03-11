@@ -32,7 +32,7 @@ namespace milli {
   }
 
   template<typename T>
-  auto repeat(unsigned long long times, T callback) noexcept(noexcept(callback(0ull))) -> typename detail::valid_types<
+  auto repeat(unsigned long long times, T&& callback) noexcept(noexcept(callback(0ull))) -> typename detail::valid_types<
       decltype(std::declval<T>()(std::declval<unsigned long long int>()))>::type {
     for (unsigned long long i = 0; i < times; ++i) {
       callback(i);
@@ -40,7 +40,7 @@ namespace milli {
   }
 
   template<typename T>
-  auto repeat(unsigned long long times, T callback) noexcept(noexcept(callback())) -> typename detail::valid_types<
+  auto repeat(unsigned long long times, T&& callback) noexcept(noexcept(callback())) -> typename detail::valid_types<
       decltype(std::declval<T>()())>::type {
     while (times--)
       callback();

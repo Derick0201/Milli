@@ -42,23 +42,14 @@ namespace milli {
   private:
     static constexpr bool is_dereference_noexcept = noexcept(*std::declval<stored_type>());
     static constexpr bool is_error_check_noexcept = noexcept(std::declval<ErrorHandler>()(false));
-    static constexpr bool is_cpp14_error_check_noexcept =
-#if __cpp_constexpr >= 201304
-        is_error_check_noexcept
-#else
-    true
-#endif
-    ;
 
   public:
     not_empty_base() = delete;
 
     template<typename U, typename = typename std::enable_if<std::is_convertible<U, stored_type>::value>
     ::type>
-#if __cpp_constexpr >= 201304
-    constexpr
-#endif
-    not_empty_base(U&& value) noexcept(std::is_nothrow_constructible<stored_type, decltype((std::forward<U>(
+
+    constexpr not_empty_base(U&& value) noexcept(std::is_nothrow_constructible<stored_type, decltype((std::forward<U>(
         value)))>::value && is_error_check_noexcept)
         : value_(std::forward<U>(value)) {
       ErrorHandler()(static_cast<bool>(value_));
@@ -82,54 +73,39 @@ namespace milli {
       return get();
     }
 
-    auto operator*() noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> element_type& {
-#if __cpp_constexpr >= 201304
+    auto operator*() noexcept(is_dereference_noexcept && is_error_check_noexcept) -> element_type& {
       ErrorHandler()(static_cast<bool>(value_));
-#endif
       return *value_;
     }
 
-    constexpr auto operator*() const noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> const element_type& {
-#if __cpp_constexpr >= 201304
+    constexpr auto operator*() const noexcept(is_dereference_noexcept && is_error_check_noexcept) -> const element_type& {
       ErrorHandler()(static_cast<bool>(value_));
-#endif
       return *value_;
     }
 
-    auto operator->() noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> element_type* {
-#if __cpp_constexpr >= 201304
+    auto operator->() noexcept(is_dereference_noexcept && is_error_check_noexcept) -> element_type* {
       ErrorHandler()(static_cast<bool>(value_));
-#endif
       return &*(*this);
     }
 
-    constexpr auto operator->() const noexcept(is_dereference_noexcept && is_cpp14_error_check_noexcept) -> element_type* {
-#if __cpp_constexpr >= 201304
+    constexpr auto operator->() const noexcept(is_dereference_noexcept && is_error_check_noexcept) -> element_type* {
       ErrorHandler()(static_cast<bool>(value_));
-#endif
       return &*(*this);
     }
 
-    constexpr auto get() const noexcept(is_cpp14_error_check_noexcept) -> const stored_type& {
-#if __cpp_constexpr >= 201304
+    constexpr auto get() const noexcept(is_error_check_noexcept) -> const stored_type& {
       ErrorHandler()(static_cast<bool>(value_));
-#endif
       return value_;
     }
 
-    auto get() noexcept(is_cpp14_error_check_noexcept) -> stored_type& {
-#if __cpp_constexpr >= 201304
+    constexpr auto get() noexcept(is_error_check_noexcept) -> stored_type& {
       ErrorHandler()(static_cast<bool>(value_));
-#endif
       return value_;
     }
 
     template<typename U, typename = typename std::enable_if<
         std::is_convertible<U, stored_type>::value>::type>
-#if __cpp_constexpr >= 201304
-    constexpr
-#endif
-    auto operator=(not_empty_base<U>&& value)
+    constexpr auto operator=(not_empty_base<U>&& value)
     noexcept(noexcept(std::declval<stored_type&>() = std::forward<U>(value)))
     -> not_empty_base& {
       ErrorHandler()(static_cast<bool>(value_));

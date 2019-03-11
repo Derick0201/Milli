@@ -19,7 +19,7 @@ not_empty_i.hpp: This file is part of the Milli Library.
 
 #include <milli/not_empty.hpp>
 
-namespace milli { ;
+namespace milli {
 
   template<typename T>
   class not_empty_i : public not_empty_base<T> {

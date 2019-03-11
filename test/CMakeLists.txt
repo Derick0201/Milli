@@ -19,7 +19,7 @@ function(create_test)
     endif()
 
     if(NOT create_test_CXX_STANDARDS)
-        list(APPEND create_test_CXX_STANDARDS "11")
+        list(APPEND create_test_CXX_STANDARDS "14")
     endif()
 
     foreach(standard ${create_test_CXX_STANDARDS})
@@ -37,7 +37,7 @@ endfunction()
 hunter_add_package(Boost COMPONENTS test)
 find_package(Boost CONFIG REQUIRED unit_test_framework)
 
-create_test(NAME raii_test SOURCES raii.cpp CXX_STANDARDS 11 14 17)
+create_test(NAME raii_test SOURCES raii.cpp CXX_STANDARDS 14 17)
 create_test(NAME move_initializer_list_test SOURCES make_container.cpp)
 create_test(NAME repeat_test SOURCES repeat.cpp)
-create_test(NAME not_empty SOURCES not_empty.cpp CXX_STANDARDS 11 14 17)
+create_test(NAME not_empty SOURCES not_empty.cpp CXX_STANDARDS 14 17)
