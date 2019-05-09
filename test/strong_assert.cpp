@@ -1,7 +1,7 @@
 /*
-not_empty_i.hpp: This file is part of the Milli Library.
+strong_assert.cpp: This file is part of the Milli Library.
 
-    Copyright (C) Dawid Pilarski, PanicSoftware 2019-2019
+    Copyright (C) Dawid Pilarski, PanicSoftware 2018-2019
     Distributed under the BSD 3-clause License.
     (See Milli/LICENSE)
 
@@ -14,22 +14,9 @@ not_empty_i.hpp: This file is part of the Milli Library.
     DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MILLI_LIBRARY_NOT_EMPTY_I_HPP
-#define MILLI_LIBRARY_NOT_EMPTY_I_HPP
+#include <milli/strong_assert.hpp>
+#include <boost/test/unit_test_suite.hpp>
 
-#include <milli/not_empty.hpp>
+BOOST_AUTO_TEST_SUITE(strong_assert_suite)
 
-namespace milli { ;
-
-  template<typename T>
-  class not_empty_i : public not_empty_base<T> {
-    using not_empty_base<T>::not_empty_base;
-  };
-
-#ifdef __cpp_deduction_guides
-  template<typename T>
-  not_empty_i(T) -> not_empty_i<T>;
-#endif
-}
-
-#endif //MILLI_LIBRARY_NOT_EMPTY_I_HPP
+BOOST_AUTO_TEST_SUITE_END()

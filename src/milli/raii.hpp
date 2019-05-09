@@ -44,9 +44,6 @@ namespace milli {
   };
 
   template<typename Functor>
-#if __cpp_deduction_guides
-  [[deprecated]]
-#endif
   auto make_raii(Functor finalizer) -> raii<Functor> {
     using MyRAII = raii<Functor>;
     return MyRAII(std::move(finalizer));

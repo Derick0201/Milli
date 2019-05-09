@@ -6,11 +6,8 @@ set(SOURCES
         optional.hpp
         make_container.hpp
         repeat.hpp
-        not_empty.hpp
-        not_empty_i.hpp
-        not_empty_h.hpp
-        not_empty_d.hpp
-        not_empty_e.hpp)
+        coro/lazy.hpp
+        )
 
 set(ABSOLUTE_SOURCES "")
 

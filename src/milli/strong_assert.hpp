@@ -19,22 +19,39 @@ strong_assert.hpp: This file is part of the Milli Library.
 
 #include <iostream>
 #include <exception>
+#include <milli/detail/source_location.hpp>
 
-namespace milli{
+namespace milli {
 
-static void strong_assert(bool condition, const char* message = nullptr, const char* error_location = nullptr) noexcept {
-  if(not condition){
-    if(error_location)
-      std::cerr << error_location << " :=> ";
-    if(message)
-      std::cerr << message;
+  static void strong_assert(bool condition, const char* message = nullptr, const char* error_location = nullptr) {
+    if (not condition) {
+      if (error_location)
+        std::cerr << error_location << " :=> ";
+      if (message)
+        std::cerr << message;
 
-    std::cerr << std::endl;
+      std::cerr << std::endl;
 
-    std::terminate();
+      std::terminate();
+    }
   }
-}
 
+#ifdef MILLI_HAS_SOURCE_LOCATION
+
+  static void strong_assert(bool condition, const char* message = nullptr,
+                            milli::detail::source_location error_location = milli::detail::source_location::current()) {
+
+    std::stringstream ss;
+    ss << error_location.function_name() << " in file "
+    ss << error_location.file_name() << ":"
+    ss << error_location.line() << ":"
+    ss << error_location.column() << " => "
+
+    //remember ss.str() is a temporary c_str is dangerous
+    strong_assert(condition, message, ss.str().c_str());
+  }
+
+#endif
 }
 
 #endif //MILLI_STRONG_ASSERT_HPP
