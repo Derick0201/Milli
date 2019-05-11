@@ -6,6 +6,7 @@ set(SOURCES
         optional.hpp
         make_container.hpp
         repeat.hpp
+        lazy.hpp
         coro/lazy.hpp
         )
 

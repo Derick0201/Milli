@@ -14,9 +14,19 @@ strong_assert.cpp: This file is part of the Milli Library.
     DEALINGS IN THE SOFTWARE.
 */
 
-#include <milli/strong_assert.hpp>
-#include <boost/test/unit_test_suite.hpp>
+#define BOOST_TEST_MODULE strong_assert test
 
-BOOST_AUTO_TEST_SUITE(strong_assert_suite)
+#include <boost/test/included/unit_test.hpp>
+#include <milli/make_container.hpp>
+#include <algorithm>
+#include <memory>
+#include <vector>
+#include <type_traits>
+
+BOOST_AUTO_TEST_SUITE(strong_assert_test_suite)
+
+  BOOST_AUTO_TEST_CASE(no_element_initialization) {
+    milli::make_container<std::vector<int>>();
+  }
 
 BOOST_AUTO_TEST_SUITE_END()

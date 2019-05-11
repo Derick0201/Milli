@@ -19,7 +19,7 @@ raii.hpp: This file is part of the Milli Library.
 
 #include <utility>
 #include <type_traits>
-#include <milli/optional.hpp>
+#include <optional>
 
 namespace milli {
 
@@ -27,7 +27,7 @@ namespace milli {
   class raii {
   public:
     raii() = default;
-    explicit raii(Functor &&finalizer) noexcept(std::is_nothrow_constructible<detail::optional<Functor>, decltype(std::forward<Functor>(finalizer))>::value)
+    explicit raii(Functor &&finalizer) noexcept(std::is_nothrow_constructible<std::optional<Functor>, decltype(std::forward<Functor>(finalizer))>::value)
         : functor_(std::forward<Functor>(finalizer))  {}
 
     raii(raii &&rhs) noexcept(noexcept(Functor(std::move(std::declval<Functor>())))) : functor_(
@@ -40,7 +40,7 @@ namespace milli {
     }
 
   private:
-    detail::optional<Functor> functor_;
+    std::optional<Functor> functor_;
   };
 
   template<typename Functor>

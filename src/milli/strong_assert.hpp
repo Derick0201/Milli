@@ -19,9 +19,15 @@ strong_assert.hpp: This file is part of the Milli Library.
 
 #include <iostream>
 #include <exception>
+#include <sstream>
 #include <milli/detail/source_location.hpp>
 
 namespace milli {
+
+#ifndef MILLI_HAS_SOURCE_LOCATION
+  inline
+#endif
+namespace legacy{
 
   static void strong_assert(bool condition, const char* message = nullptr, const char* error_location = nullptr) {
     if (not condition) {
@@ -35,17 +41,19 @@ namespace milli {
       std::terminate();
     }
   }
+}
 
 #ifdef MILLI_HAS_SOURCE_LOCATION
 
   static void strong_assert(bool condition, const char* message = nullptr,
                             milli::detail::source_location error_location = milli::detail::source_location::current()) {
+    using namespace detail;
 
     std::stringstream ss;
-    ss << error_location.function_name() << " in file "
-    ss << error_location.file_name() << ":"
-    ss << error_location.line() << ":"
-    ss << error_location.column() << " => "
+    ss << error_location.function_name() << " in file ";
+    ss << error_location.file_name() << ":";
+    ss << error_location.line() << ":";
+    ss << error_location.column() << " => ";
 
     //remember ss.str() is a temporary c_str is dangerous
     strong_assert(condition, message, ss.str().c_str());
