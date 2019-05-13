@@ -17,7 +17,6 @@ lazy.hpp: This file is part of the Milli Library.
 #ifndef MILLI_LIBRARY_LAZY_HPP
 #define MILLI_LIBRARY_LAZY_HPP
 
-//todo double check includes
 #include <optional>
 #include <utility>
 
@@ -61,7 +60,8 @@ namespace milli {
     }
 
     template<typename U>
-    constexpr T value_or(U&& default_value) const& noexcept(is_initializer_noexcept) {
+    constexpr T value_or(U&& default_value) const& noexcept(is_initializer_noexcept and
+        std::is_nothrow_constructible_v<T, U&&> and std::is_nothrow_move_constructible_v<T>) {
       if (has_value()) {
         return value();
       }
@@ -70,7 +70,8 @@ namespace milli {
     }
 
     template<typename U>
-    constexpr T value_or(U&& default_value) && noexcept(is_initializer_noexcept) {
+    constexpr T value_or(U&& default_value)&& noexcept(is_initializer_noexcept and
+                                                       std::is_nothrow_constructible_v<T, U&&> and std::is_nothrow_move_constructible_v<T>){
       if (has_value()) {
         return std::move(value());
       }
@@ -113,7 +114,7 @@ namespace milli {
   private:
     Initializer initializer_;
     //todo add thread safety
-     mutable std::optional<T> value_;
+    mutable std::optional<T> value_;
   };
 
 }

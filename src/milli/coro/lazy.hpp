@@ -43,8 +43,8 @@ namespace milli::coro::detail{
 #endif
 
 //todo double check includes
-#include <utility>
 #include <optional>
+#include <utility>
 
 namespace milli::coro {
 
@@ -61,7 +61,7 @@ namespace milli::coro {
 
       auto yield_value() = delete;
 
-      //todo make it ill-formed
+      //todo make it ill-formed. Or is it now?
       auto await_transform() = delete;
 
       template<typename U>
@@ -69,15 +69,16 @@ namespace milli::coro {
     };
   }
 
-
+  //todo merge into milli::lazy otherwise this makes no sense.
   template<typename T>
   class lazy {
   public:
-    struct promise_type : detail::lazy_promise_type_base<T>{
-      lazy get_return_object(){
+    struct promise_type : detail::lazy_promise_type_base<T> {
+      lazy get_return_object() {
         return lazy{detail::coroutine_handle<promise_type>::from_promise(*this)};
       }
     };
+
     using value_type = T;
     using coroutine_handle = coro::detail::coroutine_handle<promise_type>;
 
@@ -91,11 +92,11 @@ namespace milli::coro {
     lazy(const lazy& rhs) = delete;
 
     ~lazy() {
-      if(handle_)
+      if (handle_)
         handle_->destroy();
     }
 
-    T& value() const & {
+    T& value() const& {
       assert(handle_);
       if (not handle_->promise().value) {
         //just in case someone decides to suspend the coroutine
@@ -107,7 +108,7 @@ namespace milli::coro {
       return handle_->promise().value;
     }
 
-    T&& value() && {
+    T&& value()&& {
       return std::move(value());
     }
 
@@ -121,7 +122,7 @@ namespace milli::coro {
     }
 
     template<typename U>
-    T value_or(U&& default_value) && noexcept{
+    T value_or(U&& default_value)&& noexcept {
       if (has_value()) {
         return std::move(value());
       }
@@ -129,7 +130,7 @@ namespace milli::coro {
       return default_value;
     }
 
-    T const * operator->() const {
+    T const* operator->() const {
       return value();
     }
 
@@ -137,15 +138,15 @@ namespace milli::coro {
       return value();
     }
 
-    T& operator*() & {
+    T& operator*()& {
       return value();
     }
 
-    T const&  operator*() const& {
+    T const& operator*() const& {
       return value();
     }
 
-    T&& operator*() && {
+    T&& operator*()&& {
       return value();
     }
 
