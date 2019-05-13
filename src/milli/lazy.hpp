@@ -28,11 +28,14 @@ namespace milli {
   class lazy {
   public:
     using value_type = T;
+    using initializer_type = Initializer;
 
     //what kind of nothrow here?
-    constexpr explicit lazy(T&& value) : value_(std::forward<T>(value)) {}
+    // todo disambiguate constructors
+    // todo change T and Initializer info value_type and initializer_type
+    constexpr explicit lazy(T&& value) noexcept(std::is_nothrow_constructible<value_type, T&&>::value) : value_(std::forward<T>(value)) {}
 
-    constexpr explicit lazy(Initializer&& init) : initializer_(std::forward<Initializer>(init)) {}
+    constexpr explicit lazy(Initializer&& init) noexcept(std::is_nothrow_constructible<initializer_type, Initializer&&>::value) : initializer_(std::forward<Initializer>(init)) {}
 
     constexpr lazy(lazy&& rhs) noexcept(std::is_nothrow_move_constructible<Initializer>::value) = default;
 
