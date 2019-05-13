@@ -46,11 +46,11 @@ namespace milli::coro::detail{
 #include <utility>
 #include <optional>
 
-namespace milli {
+namespace milli::coro {
 
-  namespace coro::detail {
+  namespace detail {
     template<typename T>
-    struct lazy_promise_type {
+    struct lazy_promise_type_base {
       std::optional<T> value;
 
       auto initial_suspend() { return suspend_always{}; }
@@ -66,31 +66,36 @@ namespace milli {
 
       template<typename U>
       auto return_value(U&& val) -> void { value.emplace(std::forward<U>(val)); }
-
-      auto return_void() = delete;
     };
   }
 
 
-  template<typename T, typename Promise>
-  class lazy<T, std::experimental::coroutine_handle<Promise>> {
+  template<typename T>
+  class lazy {
   public:
+    struct promise_type : detail::lazy_promise_type_base<T>{
+      lazy get_return_object(){
+        return lazy{detail::coroutine_handle<promise_type>::from_promise(*this)};
+      }
+    };
     using value_type = T;
-    using coroutine_handle = coro::detail::coroutine_handle<Promise>;
+    using coroutine_handle = coro::detail::coroutine_handle<promise_type>;
 
     explicit lazy(coroutine_handle handle) : handle_(handle) {}
 
-    lazy(lazy&& rhs) noexcept = default;
-
-    lazy(const lazy& rhs) = default;
-
-
-    ~lazy() {
-      if (handle_)
-        handle_.destroy();
+    lazy(lazy&& rhs) noexcept : handle_(std::move(rhs.handle_)) {
+      rhs.handle_.reset();
     }
 
-    T& value() & {
+    // create shared_lazy for that
+    lazy(const lazy& rhs) = delete;
+
+    ~lazy() {
+      if(handle_)
+        handle_->destroy();
+    }
+
+    T& value() const & {
       assert(handle_);
       if (not handle_->promise().value) {
         //just in case someone decides to suspend the coroutine
@@ -102,16 +107,12 @@ namespace milli {
       return handle_->promise().value;
     }
 
-    const T& value() const& {
-      return static_cast<lazy*>(this)->value();
-    }
-
     T&& value() && {
       return std::move(value());
     }
 
     template<typename U>
-    T value_or(U&& default_value) const& {
+    T value_or(U&& default_value) const& noexcept {
       if (has_value()) {
         return value();
       }
@@ -120,7 +121,7 @@ namespace milli {
     }
 
     template<typename U>
-    T value_or(U&& default_value) && {
+    T value_or(U&& default_value) && noexcept{
       if (has_value()) {
         return std::move(value());
       }
@@ -128,7 +129,7 @@ namespace milli {
       return default_value;
     }
 
-    const T* operator->() const {
+    T const * operator->() const {
       return value();
     }
 
@@ -140,7 +141,7 @@ namespace milli {
       return value();
     }
 
-    const T& operator*() const& {
+    T const&  operator*() const& {
       return value();
     }
 
@@ -148,16 +149,17 @@ namespace milli {
       return value();
     }
 
-    bool has_value() {
-      return static_cast<bool>(handle_) && static_cast<bool>(handle_.promise().value);
+    bool has_value() const {
+      return static_cast<bool>(handle_) && static_cast<bool>(handle_->promise().value);
     }
 
-    explicit operator bool() {
+    explicit operator bool() const {
       return has_value();
     }
 
   private:
-    std::optional<coroutine_handle> handle_;
+    //todo add thread safety
+    mutable std::optional<coroutine_handle> handle_;
   };
 
 

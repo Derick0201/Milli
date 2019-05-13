@@ -32,17 +32,23 @@ move_initializer_list.cpp: This file is part of the Milli Library.
 
 #define BOOST_TEST_MODULE coro_lazy test
 
-#include <boost/test/included/unit_test.hpp>
-#include <milli/make_container.hpp>
 #include <algorithm>
+#include <boost/test/included/unit_test.hpp>
 #include <memory>
-#include <vector>
+#include <milli/coro/lazy.hpp>
+#include <milli/make_container.hpp>
 #include <type_traits>
+#include <vector>
+
+milli::coro::lazy<int> foo() noexcept{
+  co_return 5;
+}
 
 BOOST_AUTO_TEST_SUITE(coro_lazy_test_suite)
 
+
   BOOST_AUTO_TEST_CASE(no_element_initialization) {
-    milli::make_container<std::vector<int>>();
+    milli::coro::lazy<int> lazy_five = foo();
   }
 
 BOOST_AUTO_TEST_SUITE_END()

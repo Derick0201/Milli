@@ -23,42 +23,45 @@ lazy.hpp: This file is part of the Milli Library.
 
 namespace milli {
 
-  //todo check if common base class is possible
   template<typename T, typename Initializer>
   class lazy {
   public:
     using value_type = T;
     using initializer_type = Initializer;
 
-    //what kind of nothrow here?
-    // todo disambiguate constructors
-    // todo change T and Initializer info value_type and initializer_type
-    constexpr explicit lazy(T&& value) noexcept(std::is_nothrow_constructible<value_type, T&&>::value) : value_(std::forward<T>(value)) {}
+  private:
+    static constexpr bool is_initializer_noexcept =
+        noexcept(std::declval<Initializer>()());
 
-    constexpr explicit lazy(Initializer&& init) noexcept(std::is_nothrow_constructible<initializer_type, Initializer&&>::value) : initializer_(std::forward<Initializer>(init)) {}
+  public:
 
-    constexpr lazy(lazy&& rhs) noexcept(std::is_nothrow_move_constructible<Initializer>::value) = default;
+    template <typename ...Args>
+    constexpr explicit lazy(std::in_place_t tag, Args&&... value) noexcept(std::is_nothrow_constructible_v<value_type, Args&&...>) : value_(tag, std::forward<Args>(value)...) {}
 
-    constexpr lazy(const lazy& rhs) = default;
+    constexpr explicit lazy(initializer_type&& init) noexcept(std::is_nothrow_move_constructible_v<initializer_type>) : initializer_(std::forward<initializer_type>(init)) {}
 
-    constexpr T& value()& {
+    constexpr lazy(lazy&& rhs) noexcept(std::is_nothrow_move_constructible_v<Initializer> and std::is_nothrow_move_constructible_v<value_type>) = default;
+
+    constexpr lazy(const lazy& rhs) noexcept(std::is_nothrow_constructible_v<Initializer> and std::is_nothrow_constructible_v<value_type>) = default;
+
+    constexpr T& value()& noexcept(is_initializer_noexcept) {
       if (not value_) {
-        value_ = initializer_();
+        initialize();
       }
 
       return value_;
     }
 
-    constexpr const T& value() const& {
+    constexpr const T& value() const& noexcept(is_initializer_noexcept) {
       return static_cast<lazy*>(this)->value();
     }
 
-    constexpr T&& value()&& {
+    constexpr T&& value()&& noexcept(is_initializer_noexcept) {
       return std::move(value());
     }
 
     template<typename U>
-    constexpr T value_or(U&& default_value) const& {
+    constexpr T value_or(U&& default_value) const& noexcept(is_initializer_noexcept) {
       if (has_value()) {
         return value();
       }
@@ -67,7 +70,7 @@ namespace milli {
     }
 
     template<typename U>
-    constexpr T value_or(U&& default_value)&& {
+    constexpr T value_or(U&& default_value) && noexcept(is_initializer_noexcept) {
       if (has_value()) {
         return std::move(value());
       }
@@ -75,37 +78,42 @@ namespace milli {
       return default_value;
     }
 
-    constexpr const T* operator->() const {
+    constexpr const T* operator->() const noexcept(is_initializer_noexcept) {
       return value();
     }
 
-    constexpr T* operator->() {
+    constexpr T* operator->() noexcept(is_initializer_noexcept) {
       return value();
     }
 
-    constexpr T& operator*()& {
+    constexpr T& operator*()& noexcept(is_initializer_noexcept) {
       return value();
     }
 
-    constexpr const T& operator*() const& {
+    constexpr const T& operator*() const& noexcept(is_initializer_noexcept) {
       return value();
     }
 
-    constexpr T&& operator*()&& {
+    constexpr T&& operator*()&& noexcept(is_initializer_noexcept) {
       return value();
     }
 
-    constexpr bool has_value() {
+    constexpr bool has_value() noexcept {
       return static_cast<bool>(value_);
     }
 
-    constexpr explicit operator bool() {
+    constexpr explicit operator bool() noexcept {
       return has_value();
+    }
+
+    void initialize() noexcept(is_initializer_noexcept){
+      value_.emplace(initializer_());
     }
 
   private:
     Initializer initializer_;
-    std::optional<T> value_;
+    //todo add thread safety
+     mutable std::optional<T> value_;
   };
 
 }
