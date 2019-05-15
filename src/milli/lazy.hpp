@@ -98,7 +98,6 @@ namespace milli {
 
   private:
     initializer_type initializer_;
-    //todo add thread safety
     mutable std::optional<T> optional_value_;
   };
 
