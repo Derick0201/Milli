@@ -26,18 +26,18 @@ namespace milli {
   template<typename Functor>
   class raii {
   public:
-    raii() = default;
-    explicit raii(Functor &&finalizer) noexcept(std::is_nothrow_constructible<std::optional<Functor>, decltype(std::forward<Functor>(finalizer))>::value)
-        : functor_(std::forward<Functor>(finalizer))  {}
 
-    raii(raii &&rhs) noexcept(noexcept(Functor(std::move(std::declval<Functor>())))) : functor_(
-        std::move(rhs.functor_)) {}
+    raii() = delete;
 
-    ~raii() noexcept(noexcept(std::declval<Functor>()())) { if (functor_) functor_.value()(); }
+    raii(const raii& rhs) = delete;
 
-    auto empty() noexcept -> bool {
-      return functor_.empty();
-    }
+    explicit raii(Functor finalizer)
+        : functor_(std::in_place, std::move(finalizer)) {}
+
+    raii(raii&& rhs) noexcept(std::is_nothrow_move_constructible_v<Functor>)
+    : functor_(std::move(rhs.functor_)) { rhs.functor_.reset(); }
+
+    ~raii() noexcept(std::is_nothrow_invocable_v<Functor>) { if (functor_) functor_.value()(); }
 
   private:
     std::optional<Functor> functor_;
@@ -45,14 +45,11 @@ namespace milli {
 
   template<typename Functor>
   auto make_raii(Functor finalizer) -> raii<Functor> {
-    using MyRAII = raii<Functor>;
-    return MyRAII(std::move(finalizer));
+    return raii{std::move(finalizer)};
   }
 
-#ifdef __cpp_deduction_guides
-template <typename Functor>
-raii(Functor&&) -> raii<Functor>;
-#endif
+  template<typename Functor>
+  raii(Functor&&) -> raii<Functor>;
 
 }
 

@@ -19,11 +19,15 @@ raii.cpp: This file is part of the Milli Library.
 #include <boost/test/included/unit_test.hpp>
 #include <milli/raii.hpp>
 #include <milli/strong_assert.hpp>
+#include <milli/detail/assert.hpp>
 #include <functional>
 
 using namespace milli;
 
+milli::raii exception_guard([] { milli::detail::assertion::rethrow(); });
 
+
+//todo improve raii code
 BOOST_AUTO_TEST_SUITE(raii_test_suite)
 
   BOOST_AUTO_TEST_CASE(simple_raii){
@@ -54,24 +58,28 @@ BOOST_AUTO_TEST_SUITE(raii_test_suite)
     make_raii(nop);
   }
 
-  BOOST_AUTO_TEST_CASE(empty_raii){
-    raii<void (*)()> raii;
-  }
-
   BOOST_AUTO_TEST_CASE(noexceptness_test){
     auto noexcept_lambda = []() noexcept {};
-    auto except_lambda = []() noexcept(false) {};
+    auto except_lambda = []() {};
+    struct functor{
+      functor() = default;
+      functor(const functor&) noexcept = default;
+      functor(functor&& rhs) noexcept = default;
+    };
 
-    constexpr bool is_noexcept_constructible = std::is_nothrow_constructible<raii<decltype(noexcept_lambda)>, decltype(noexcept_lambda)>::value;
-    constexpr bool is_except_false_constructible = std::is_nothrow_constructible<raii<decltype(except_lambda)>, decltype(except_lambda)>::value;
-    constexpr bool is_noexcept_move_constructible = std::is_nothrow_move_constructible<raii<decltype(noexcept_lambda)>>::value;
+    static_assert(std::is_nothrow_move_constructible_v<decltype(noexcept_lambda)>);
+    static_assert(std::is_nothrow_move_constructible_v<decltype(except_lambda)>);
+    static_assert(std::is_nothrow_move_constructible_v<std::optional<decltype(noexcept_lambda)>>);
+    static_assert(std::is_nothrow_move_constructible_v<std::optional<decltype(except_lambda)>>);
+    static_assert(std::is_nothrow_move_constructible_v<raii<decltype(noexcept_lambda)>>);
+    static_assert(std::is_nothrow_move_constructible_v<raii<decltype(except_lambda)>>);
 
-    BOOST_TEST(is_noexcept_constructible == true);
-    BOOST_TEST(is_except_false_constructible == false);
-    BOOST_TEST(is_noexcept_move_constructible == true);
+    //constexpr bool is_noexcept_constructible_from_lambda = std::is_nothrow_constructible<raii<decltype(noexcept_lambda)>, decltype(noexcept_lambda)>::value;
+    //constexpr bool is_except_false_constructible_from_lambda = std::is_nothrow_constructible<raii<decltype(except_lambda)>, decltype(except_lambda)>::value;
+    constexpr bool is_noexcept_move_constructible_from_lambda = std::is_nothrow_move_constructible_v<raii<decltype(except_lambda)>>;
+    constexpr bool is_noexcept_move_constructible = std::is_nothrow_move_constructible_v<raii<functor>>;
 
-    constexpr bool is_empty_always_nothrow = noexcept(std::declval<raii<decltype(except_lambda)>>().empty());
-    BOOST_TEST(is_empty_always_nothrow == true);
+    BOOST_TEST(is_noexcept_move_constructible);
   }
 
 #ifdef __cpp_deduction_guides

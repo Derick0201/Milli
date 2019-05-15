@@ -22,8 +22,9 @@ not_empty.cpp: This file is part of the Milli Library.
 #define BOOST_TEST_MODULE not_empty test
 #include <boost/test/included/unit_test.hpp>
 
-
 using namespace milli;
+
+milli::raii exception_guard([] { milli::detail::assertion::rethrow(); });
 
 BOOST_AUTO_TEST_SUITE(not_empty_test_suite)
 

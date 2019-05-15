@@ -17,11 +17,18 @@ move_initializer_list.cpp: This file is part of the Milli Library.
 #define BOOST_TEST_MODULE make_container test
 
 #include <boost/test/included/unit_test.hpp>
+
 #include <milli/make_container.hpp>
+#include <milli/raii.hpp>
+#include <milli/detail/assert.hpp>
+
 #include <algorithm>
 #include <memory>
 #include <vector>
 #include <type_traits>
+
+
+milli::raii exception_guard([] { milli::detail::assertion::rethrow(); });
 
 BOOST_AUTO_TEST_SUITE(make_container_test_suite)
 

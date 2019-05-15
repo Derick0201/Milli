@@ -16,36 +16,16 @@ lazy.hpp: This file is part of the Milli Library.
 #ifndef MILLI_LIBRARY_SRC_MILLI_CORO_LAZY_HPP
 #define MILLI_LIBRARY_SRC_MILLI_CORO_LAZY_HPP
 
-#if !__has_include(<experimental/coroutine>) and !__has_include(<coroutine>)
-#error "your compiler or standard library implementation does not support coroutines."
-#endif
 
-#if __has_include(<experimental/coroutine>)
-
-#include <experimental/coroutine>
-
-namespace milli::coro::detail {
-  using suspend_always = std::experimental::suspend_always;
-  using suspend_never = std::experimental::suspend_never;
-  template<typename T>
-  using coroutine_handle = std::experimental::coroutine_handle<T>;
-}
-
-#elif __has_include(<coroutine>)
-#include <coroutine>
-
-namespace milli::coro::detail{
-  using suspend_always = std::suspend_always;
-  using suspend_never = std::suspend_never;
-  template <typename T>
-  using coroutine_handle = std::coroutine_handle<T>;
-}
-#endif
-
+#include <milli/coro/detail/has_coro_support.hpp>
 #include <milli/lazy.hpp> //for IDE's convenience
 #include <optional>
 #include <utility>
 #include <functional>
+
+#ifndef MILLI_HAS_CORO_SUPPORT
+#error "your compiler or standard library does not support coroutines"
+#endif
 
 namespace milli::coro {
 
@@ -60,14 +40,14 @@ namespace milli::coro {
           while(not this_coro.done())
             this_coro.resume();
 
-          assert(this->value);
+          milli_assert(this->value);
           auto value = *(this->value);
           this_coro.destroy();
           return value;
         };
 
         std::function<T()> type_erased_initializer = initializer;
-        return lazy(type_erased_initializer);
+        return lazy{type_erased_initializer};
       }
 
       auto initial_suspend() { return suspend_always{}; }
@@ -78,7 +58,6 @@ namespace milli::coro {
 
       auto yield_value() = delete;
 
-      //todo make it ill-formed. Or is it now?
       auto await_transform() = delete;
 
       template<typename U>
@@ -97,8 +76,8 @@ namespace std::experimental {
 #else
 namespace std {
   template <typename T>
-  class coroutine_traits<lazy<T>>{
-    using promise_type = milli::coro::detail::lazy_promise_type_base<T>;
+  class coroutine_traits<::milli::lazy<T>>{
+    using promise_type = ::milli::coro::detail::lazy_promise_type_base<T>;
   };
 }
 #endif

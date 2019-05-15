@@ -56,7 +56,7 @@ namespace legacy{
     ss << error_location.column() << " => ";
 
     //remember ss.str() is a temporary c_str is dangerous
-    strong_assert(condition, message, ss.str().c_str());
+    legacy::strong_assert(condition, message, ss.str().c_str());
   }
 
 #endif

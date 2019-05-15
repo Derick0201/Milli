@@ -22,6 +22,9 @@ strong_assert.cpp: This file is part of the Milli Library.
 #include <memory>
 #include <vector>
 #include <type_traits>
+#include <milli/detail/assert.hpp>
+
+milli::raii exception_guard([] { milli::detail::assertion::rethrow(); });
 
 BOOST_AUTO_TEST_SUITE(strong_assert_test_suite)
 

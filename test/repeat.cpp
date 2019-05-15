@@ -19,8 +19,11 @@ repeat.cpp: This file is part of the Milli Library.
 #include <boost/test/included/unit_test.hpp>
 #include <milli/repeat.hpp>
 #include <limits>
+#include <milli/detail/assert.hpp>
 
 constexpr unsigned int repeat_times = 42;
+
+milli::raii exception_guard([] { milli::detail::assertion::rethrow(); });
 
 BOOST_AUTO_TEST_SUITE(repeat_test_suite)
 

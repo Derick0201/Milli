@@ -17,10 +17,12 @@ lazy.hpp: This file is part of the Milli Library.
 #ifndef MILLI_LIBRARY_LAZY_HPP
 #define MILLI_LIBRARY_LAZY_HPP
 
+#include "detail/assert.hpp"
 #include <optional>
 #include <utility>
 #include <functional>
 
+//todo trailing return type
 namespace milli {
 
   template<typename T>
@@ -35,8 +37,9 @@ namespace milli {
     template <typename ...Args>
     constexpr explicit lazy(std::in_place_t tag, Args&&... value) noexcept(std::is_nothrow_constructible_v<value_type, Args&&...>) : optional_value_(tag, std::forward<Args>(value)...) {}
 
-    constexpr explicit lazy(initializer_type initializer) noexcept(std::is_nothrow_move_constructible_v<initializer_type>) : initializer_(std::forward<initializer_type>(initializer)) {
-      assert(initializer);
+    //todo improve constructor to be explicit about std::function requirements
+    constexpr explicit lazy(initializer_type initializer) noexcept(std::is_nothrow_move_constructible_v<initializer_type>) : initializer_(std::move(initializer)) {
+      milli_assert(initializer);
     }
 
     constexpr lazy(lazy&& rhs) noexcept(is_initializer_nothrow_constructible and std::is_nothrow_move_constructible_v<value_type>) :
@@ -45,27 +48,19 @@ namespace milli {
       rhs.optional_value_.reset();
     }
 
-    constexpr lazy(const lazy& rhs) noexcept(is_initializer_nothrow_constructible and std::is_nothrow_constructible_v<value_type>) = delete;
+    constexpr lazy(const lazy& rhs) = delete;
 
     constexpr T& value()& {
       if (not optional_value_) {
         initialize();
       }
 
-      assert(optional_value_);
+      milli_assert(optional_value_);
       return *optional_value_;
-    }
-
-    constexpr const T& value() const& {
-      return static_cast<lazy*>(this)->value();
     }
 
     constexpr T&& value()&& {
       return std::move(value());
-    }
-
-    constexpr const T* operator->() const {
-      return &value();
     }
 
     constexpr T* operator->() {
@@ -76,19 +71,15 @@ namespace milli {
       return value();
     }
 
-    constexpr const T& operator*() const& {
-      return value();
-    }
-
     constexpr T&& operator*()&& {
-      return value();
+      return std::move(value());
     }
 
-    constexpr bool has_value() noexcept {
+    constexpr bool has_value() const noexcept {
       return static_cast<bool>(optional_value_);
     }
 
-    constexpr explicit operator bool() noexcept {
+    constexpr explicit operator bool() const noexcept {
       return has_value();
     }
 
@@ -98,11 +89,14 @@ namespace milli {
 
   private:
     initializer_type initializer_;
-    mutable std::optional<T> optional_value_;
+    std::optional<T> optional_value_;
   };
 
   template <typename T>
   explicit lazy(std::function<T()>) -> lazy<T>;
+
+  template <typename Initializer>
+  explicit lazy(Initializer) -> lazy<decltype(std::declval<Initializer>()())>;
 }
 
 #if __has_include(<experimental/coroutine>) or __has_include(<coroutine>)
