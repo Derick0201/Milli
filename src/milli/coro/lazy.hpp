@@ -42,16 +42,33 @@ namespace milli::coro::detail{
 }
 #endif
 
-//todo double check includes
+#include <milli/lazy.hpp> //for IDE's convenience
 #include <optional>
 #include <utility>
+#include <functional>
 
 namespace milli::coro {
 
   namespace detail {
     template<typename T>
-    struct lazy_promise_type_base {
+    struct lazy_promise_type {
       std::optional<T> value;
+
+      lazy<T> get_return_object(){
+        auto this_coro = detail::coroutine_handle<lazy_promise_type>::from_promise(*this);
+        auto initializer = [this_coro, this] () mutable {
+          while(not this_coro.done())
+            this_coro.resume();
+
+          assert(this->value);
+          auto value = *(this->value);
+          this_coro.destroy();
+          return value;
+        };
+
+        std::function<T()> type_erased_initializer = initializer;
+        return lazy(type_erased_initializer);
+      }
 
       auto initial_suspend() { return suspend_always{}; }
 
@@ -68,102 +85,22 @@ namespace milli::coro {
       auto return_value(U&& val) -> void { value.emplace(std::forward<U>(val)); }
     };
   }
-
-  //todo merge into milli::lazy otherwise this makes no sense.
-  template<typename T>
-  class lazy {
-  public:
-    struct promise_type : detail::lazy_promise_type_base<T> {
-      lazy get_return_object() {
-        return lazy{detail::coroutine_handle<promise_type>::from_promise(*this)};
-      }
-    };
-
-    using value_type = T;
-    using coroutine_handle = coro::detail::coroutine_handle<promise_type>;
-
-    explicit lazy(coroutine_handle handle) : handle_(handle) {}
-
-    lazy(lazy&& rhs) noexcept : handle_(std::move(rhs.handle_)) {
-      rhs.handle_.reset();
-    }
-
-    // create shared_lazy for that
-    lazy(const lazy& rhs) = delete;
-
-    ~lazy() {
-      if (handle_)
-        handle_->destroy();
-    }
-
-    T& value() const& {
-      assert(handle_);
-      if (not handle_->promise().value) {
-        //just in case someone decides to suspend the coroutine
-        //todo remove once await_suspend is ill-formed
-        while (not handle_->done()) handle_->resume();
-      }
-
-      assert(handle_->promise().value);
-      return handle_->promise().value;
-    }
-
-    T&& value()&& {
-      return std::move(value());
-    }
-
-    template<typename U>
-    T value_or(U&& default_value) const& noexcept {
-      if (has_value()) {
-        return value();
-      }
-
-      return default_value;
-    }
-
-    template<typename U>
-    T value_or(U&& default_value)&& noexcept {
-      if (has_value()) {
-        return std::move(value());
-      }
-
-      return default_value;
-    }
-
-    T const* operator->() const {
-      return value();
-    }
-
-    T* operator->() {
-      return value();
-    }
-
-    T& operator*()& {
-      return value();
-    }
-
-    T const& operator*() const& {
-      return value();
-    }
-
-    T&& operator*()&& {
-      return value();
-    }
-
-    bool has_value() const {
-      return static_cast<bool>(handle_) && static_cast<bool>(handle_->promise().value);
-    }
-
-    explicit operator bool() const {
-      return has_value();
-    }
-
-  private:
-    //todo add thread safety
-    mutable std::optional<coroutine_handle> handle_;
-  };
-
-
 }
+
+#if __has_include(<experimental/coroutine>)
+namespace std::experimental {
+  template <typename T>
+  struct coroutine_traits<::milli::lazy<T>>{
+    using promise_type = ::milli::coro::detail::lazy_promise_type<T>;
+  };
+}
+#else
+namespace std {
+  template <typename T>
+  class coroutine_traits<lazy<T>>{
+    using promise_type = milli::coro::detail::lazy_promise_type_base<T>;
+  };
+}
+#endif
 
 #endif //MILLI_LIBRARY_SRC_MILLI_CORO_LAZY_H

@@ -19,104 +19,91 @@ lazy.hpp: This file is part of the Milli Library.
 
 #include <optional>
 #include <utility>
+#include <functional>
 
 namespace milli {
 
-  template<typename T, typename Initializer>
+  template<typename T>
   class lazy {
   public:
     using value_type = T;
-    using initializer_type = Initializer;
-
+    using initializer_type = std::function<value_type()>;
   private:
-    static constexpr bool is_initializer_noexcept =
-        noexcept(std::declval<Initializer>()());
-
+    static constexpr bool is_initializer_nothrow_constructible = std::is_nothrow_move_constructible_v<initializer_type>;
   public:
 
     template <typename ...Args>
-    constexpr explicit lazy(std::in_place_t tag, Args&&... value) noexcept(std::is_nothrow_constructible_v<value_type, Args&&...>) : value_(tag, std::forward<Args>(value)...) {}
+    constexpr explicit lazy(std::in_place_t tag, Args&&... value) noexcept(std::is_nothrow_constructible_v<value_type, Args&&...>) : optional_value_(tag, std::forward<Args>(value)...) {}
 
-    constexpr explicit lazy(initializer_type&& init) noexcept(std::is_nothrow_move_constructible_v<initializer_type>) : initializer_(std::forward<initializer_type>(init)) {}
+    constexpr explicit lazy(initializer_type initializer) noexcept(std::is_nothrow_move_constructible_v<initializer_type>) : initializer_(std::forward<initializer_type>(initializer)) {
+      assert(initializer);
+    }
 
-    constexpr lazy(lazy&& rhs) noexcept(std::is_nothrow_move_constructible_v<Initializer> and std::is_nothrow_move_constructible_v<value_type>) = default;
+    constexpr lazy(lazy&& rhs) noexcept(is_initializer_nothrow_constructible and std::is_nothrow_move_constructible_v<value_type>) :
+    initializer_(std::move(rhs.initializer_)),
+    optional_value_(std::move(rhs.optional_value_)){
+      rhs.optional_value_.reset();
+    }
 
-    constexpr lazy(const lazy& rhs) noexcept(std::is_nothrow_constructible_v<Initializer> and std::is_nothrow_constructible_v<value_type>) = default;
+    constexpr lazy(const lazy& rhs) noexcept(is_initializer_nothrow_constructible and std::is_nothrow_constructible_v<value_type>) = delete;
 
-    constexpr T& value()& noexcept(is_initializer_noexcept) {
-      if (not value_) {
+    constexpr T& value()& {
+      if (not optional_value_) {
         initialize();
       }
 
-      return value_;
+      assert(optional_value_);
+      return *optional_value_;
     }
 
-    constexpr const T& value() const& noexcept(is_initializer_noexcept) {
+    constexpr const T& value() const& {
       return static_cast<lazy*>(this)->value();
     }
 
-    constexpr T&& value()&& noexcept(is_initializer_noexcept) {
+    constexpr T&& value()&& {
       return std::move(value());
     }
 
-    template<typename U>
-    constexpr T value_or(U&& default_value) const& noexcept(is_initializer_noexcept and
-        std::is_nothrow_constructible_v<T, U&&> and std::is_nothrow_move_constructible_v<T>) {
-      if (has_value()) {
-        return value();
-      }
-
-      return default_value;
+    constexpr const T* operator->() const {
+      return &value();
     }
 
-    template<typename U>
-    constexpr T value_or(U&& default_value)&& noexcept(is_initializer_noexcept and
-                                                       std::is_nothrow_constructible_v<T, U&&> and std::is_nothrow_move_constructible_v<T>){
-      if (has_value()) {
-        return std::move(value());
-      }
-
-      return default_value;
+    constexpr T* operator->() {
+      return &value();
     }
 
-    constexpr const T* operator->() const noexcept(is_initializer_noexcept) {
+    constexpr T& operator*()& {
       return value();
     }
 
-    constexpr T* operator->() noexcept(is_initializer_noexcept) {
+    constexpr const T& operator*() const& {
       return value();
     }
 
-    constexpr T& operator*()& noexcept(is_initializer_noexcept) {
-      return value();
-    }
-
-    constexpr const T& operator*() const& noexcept(is_initializer_noexcept) {
-      return value();
-    }
-
-    constexpr T&& operator*()&& noexcept(is_initializer_noexcept) {
+    constexpr T&& operator*()&& {
       return value();
     }
 
     constexpr bool has_value() noexcept {
-      return static_cast<bool>(value_);
+      return static_cast<bool>(optional_value_);
     }
 
     constexpr explicit operator bool() noexcept {
       return has_value();
     }
 
-    void initialize() noexcept(is_initializer_noexcept){
-      value_.emplace(initializer_());
+    void initialize() {
+      optional_value_.emplace(initializer_());
     }
 
   private:
-    Initializer initializer_;
+    initializer_type initializer_;
     //todo add thread safety
-    mutable std::optional<T> value_;
+    mutable std::optional<T> optional_value_;
   };
 
+  template <typename T>
+  explicit lazy(std::function<T()>) -> lazy<T>;
 }
 
 #if __has_include(<experimental/coroutine>) or __has_include(<coroutine>)
