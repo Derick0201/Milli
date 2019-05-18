@@ -30,62 +30,61 @@ milli::raii exception_guard([] { milli::detail::assertion::rethrow(); });
 //todo improve raii code
 BOOST_AUTO_TEST_SUITE(raii_test_suite)
 
-  BOOST_AUTO_TEST_CASE(simple_raii){
+  BOOST_AUTO_TEST_CASE(simple_raii) {
     int test = 0;
-    make_raii([&test](){ test = 2; });
+    make_raii([&test]() { test = 2; });
 
     BOOST_TEST(test == 2, "raii function gets called successfully for temporary variable");
   }
 
-  BOOST_AUTO_TEST_CASE(simple_raii_lifetime){
+  BOOST_AUTO_TEST_CASE(simple_raii_lifetime) {
     int test = 0;
 
     {
-      auto raii = make_raii([&test](){ test *= 2; });
+      auto raii = make_raii([&test]() { test *= 2; });
       test = 2;
     }
 
     BOOST_TEST(test == 4, "raii function gets called successfully for scoped variable");
   }
 
-  BOOST_AUTO_TEST_CASE(empty_std_function_raii){
+  BOOST_AUTO_TEST_CASE(empty_std_function_raii) {
     BOOST_CHECK_THROW(make_raii(std::function<void()>()), std::bad_function_call);
   }
 
-  void nop(){}
+  void nop() {}
 
-  BOOST_AUTO_TEST_CASE(stateless_raii){
+  BOOST_AUTO_TEST_CASE(stateless_raii) {
     make_raii(nop);
   }
 
-  BOOST_AUTO_TEST_CASE(noexceptness_test){
+  template<typename T>
+  constexpr static bool is_nothrow_only_move_constructible = noexcept(new(std::nothrow) T(
+      std::move(std::declval<T>())));
+
+  BOOST_AUTO_TEST_CASE(noexceptness_test) {
     auto noexcept_lambda = []() noexcept {};
     auto except_lambda = []() {};
-    struct functor{
-      functor() = default;
-      functor(const functor&) noexcept = default;
-      functor(functor&& rhs) noexcept = default;
-    };
 
-    static_assert(std::is_nothrow_move_constructible_v<decltype(noexcept_lambda)>);
-    static_assert(std::is_nothrow_move_constructible_v<decltype(except_lambda)>);
-    static_assert(std::is_nothrow_move_constructible_v<std::optional<decltype(noexcept_lambda)>>);
-    static_assert(std::is_nothrow_move_constructible_v<std::optional<decltype(except_lambda)>>);
-    static_assert(std::is_nothrow_move_constructible_v<raii<decltype(noexcept_lambda)>>);
-    static_assert(std::is_nothrow_move_constructible_v<raii<decltype(except_lambda)>>);
+    using noexcept_raii = raii<decltype(noexcept_lambda)>;
+    using except_raii = raii<decltype(except_lambda)>;
 
-    //constexpr bool is_noexcept_constructible_from_lambda = std::is_nothrow_constructible<raii<decltype(noexcept_lambda)>, decltype(noexcept_lambda)>::value;
-    //constexpr bool is_except_false_constructible_from_lambda = std::is_nothrow_constructible<raii<decltype(except_lambda)>, decltype(except_lambda)>::value;
-    constexpr bool is_noexcept_move_constructible_from_lambda = std::is_nothrow_move_constructible_v<raii<decltype(except_lambda)>>;
-    constexpr bool is_noexcept_move_constructible = std::is_nothrow_move_constructible_v<raii<functor>>;
+    constexpr bool is_noexcept_move_constructible = is_nothrow_only_move_constructible<noexcept_raii>;
+    constexpr bool is_noexcept_move_constructible_from_noexcept_false
+        = is_nothrow_only_move_constructible<except_raii>;
 
     BOOST_TEST(is_noexcept_move_constructible);
+    BOOST_TEST(is_noexcept_move_constructible_from_noexcept_false);
+
+    constexpr bool is_noexcept_destructible = std::is_nothrow_destructible_v<noexcept_raii>;
+    constexpr bool is_except_destructible = not std::is_nothrow_destructible_v<except_raii>;
+
+    BOOST_TEST(is_noexcept_destructible);
+    BOOST_TEST(is_except_destructible);
   }
 
-#ifdef __cpp_deduction_guides
-  BOOST_AUTO_TEST_CASE(deduction_guides){
-    raii test([](){});
+  BOOST_AUTO_TEST_CASE(deduction_guides) {
+    raii test([]() {});
   }
-#endif
 
 BOOST_AUTO_TEST_SUITE_END()

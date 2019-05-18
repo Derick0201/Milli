@@ -29,13 +29,16 @@ namespace milli {
 
     raii() = delete;
 
-    raii(const raii& rhs) = delete;
+    raii(raii& rhs) = delete;
 
     explicit raii(Functor finalizer)
         : functor_(std::in_place, std::move(finalizer)) {}
 
     raii(raii&& rhs) noexcept(std::is_nothrow_move_constructible_v<Functor>)
-    : functor_(std::move(rhs.functor_)) { rhs.functor_.reset(); }
+        : functor_(std::move(rhs.functor_)) {
+
+      rhs.functor_.reset();
+    }
 
     ~raii() noexcept(std::is_nothrow_invocable_v<Functor>) { if (functor_) functor_.value()(); }
 

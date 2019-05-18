@@ -39,7 +39,7 @@ namespace milli {
 
     //todo improve constructor to be explicit about std::function requirements
     constexpr explicit lazy(initializer_type initializer) noexcept(std::is_nothrow_move_constructible_v<initializer_type>) : initializer_(std::move(initializer)) {
-      milli_assert(initializer);
+      milli_assert(initializer_);
     }
 
     constexpr lazy(lazy&& rhs) noexcept(is_initializer_nothrow_constructible and std::is_nothrow_move_constructible_v<value_type>) :

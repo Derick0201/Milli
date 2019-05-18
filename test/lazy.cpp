@@ -1,23 +1,5 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "cert-err58-cpp"
 /*
-$FILE: This file is part of the Milli Library.
-
-    Copyright (C) Dawid Pilarski, PanicSoftware 2018-2019
-    Distributed under the BSD 3-clause License.
-    (See Milli/LICENSE)
-
-    Milli IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
-    SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
-    FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
-    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.
-*/
-
-/*
-move_initializer_list.cpp: This file is part of the Milli Library.
+lazy.cpp: This file is part of the Milli Library.
 
     Copyright (C) Dawid Pilarski, PanicSoftware 2018-2019
     Distributed under the BSD 3-clause License.
@@ -34,15 +16,14 @@ move_initializer_list.cpp: This file is part of the Milli Library.
 
 #define BOOST_TEST_MODULE coro_lazy test
 
-#include <stdexcept>
-
-
 #include <boost/test/included/unit_test.hpp>
-#include <milli/coro/lazy.hpp>
-#include <milli/make_container.hpp>
-#include <type_traits>
-#include <functional>
+
+#include <milli/lazy.hpp>
 #include <milli/raii.hpp>
+
+#include <functional>
+#include <stdexcept>
+#include <type_traits>
 
 
 namespace {
@@ -234,7 +215,7 @@ BOOST_AUTO_TEST_SUITE(lazy_test_suite)
   }
 
   BOOST_AUTO_TEST_CASE(lazy_template_can_be_instantiated_with_const_value) {
-    milli::lazy<const int> lazy([]() -> int { return test_value; });
+    milli::lazy<const int> lazy([]() { return test_value; });
 
     BOOST_TEST(not lazy.has_value());
     BOOST_TEST(not lazy.operator bool());

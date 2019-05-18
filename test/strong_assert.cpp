@@ -17,19 +17,16 @@ strong_assert.cpp: This file is part of the Milli Library.
 #define BOOST_TEST_MODULE strong_assert test
 
 #include <boost/test/included/unit_test.hpp>
-#include <milli/make_container.hpp>
-#include <algorithm>
-#include <memory>
-#include <vector>
-#include <type_traits>
 #include <milli/detail/assert.hpp>
+#include <milli/raii.hpp>
+
 
 milli::raii exception_guard([] { milli::detail::assertion::rethrow(); });
 
 BOOST_AUTO_TEST_SUITE(strong_assert_test_suite)
 
-  BOOST_AUTO_TEST_CASE(no_element_initialization) {
-    milli::make_container<std::vector<int>>();
+  BOOST_AUTO_TEST_CASE(test_to_implement) {
+
   }
 
 BOOST_AUTO_TEST_SUITE_END()
