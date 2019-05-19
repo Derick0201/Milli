@@ -38,7 +38,9 @@ function(create_test)
     endforeach()
 endfunction()
 
-hunter_add_package(Boost COMPONENTS test)
+if (${USE_HUNTER})
+    hunter_add_package(Boost COMPONENTS test)
+endif ()
 find_package(Boost CONFIG REQUIRED unit_test_framework)
 
 create_test(NAME raii_test SOURCES raii.cpp CXX_STANDARDS 17 20)

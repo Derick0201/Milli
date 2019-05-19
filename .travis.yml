@@ -24,7 +24,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - libstdc++
             - g++-5
       env:
          - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
@@ -36,7 +35,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - libstdc++
             - g++-6
       env:
         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
@@ -48,7 +46,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - libstdc++
+            - libstdc++-7
             - g++-7
       env:
         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
