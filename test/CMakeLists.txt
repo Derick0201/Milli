@@ -39,7 +39,7 @@ function(create_test)
 endfunction()
 
 
-hunter_add_package(Boost COMPONENTS test)
+#hunter_add_package(Boost COMPONENTS test)
 find_package(Boost CONFIG REQUIRED unit_test_framework)
 
 create_test(NAME raii_test SOURCES raii.cpp CXX_STANDARDS 17 20)
