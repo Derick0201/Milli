@@ -16,6 +16,9 @@ script:
     - cmake -DENABLE_TESTING=ON ..
     - cmake --build . && cd test && ctest
 
+services:
+  - docker
+
 matrix:
   include:
     - os: linux
